@@ -1,0 +1,8 @@
+{
+  "name": "Remix: AutoRent",
+  "description": "Platform Layanan Transportasi Terintegrasi: Rental Mobil, Jurnal Travel, dan Jasa Driver Profesional",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
