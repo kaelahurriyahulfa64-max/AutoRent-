@@ -518,6 +518,10 @@ export default function DashboardAdmin({
     setAdminRefundNama(ref.rekeningNama || '');
   };
 
+  // (D) Helper: cek refund aktif berdasarkan bookingId
+  const getActiveRefundByBookingId = (bookingId: string) =>
+    refunds.find(r => r.bookingId === bookingId && r.status !== 'Ditolak');
+
   const submitApproveRefund = () => {
     if (!approvingRefund) return;
     const ref = approvingRefund;
@@ -541,17 +545,12 @@ export default function DashboardAdmin({
       return;
     }
 
-    // Verify payment has been approved (Meaning booking has a recorded amount paid)
+    // (B) Source of truth: gunakan targetBooking.jumlahBayar, bukan ref.totalDibayar (bisa stale)
     if (targetBooking.jumlahBayar <= 0) {
-      alert('Persetujuan refund ditolak: Booking belum dibayar.');
+      alert('Persetujuan refund ditolak: Booking belum ada pembayaran yang masuk.');
       return;
     }
-
-    // Verify refund amount does not exceed amount paid
-    if (ref.nominalRefund > ref.totalDibayar) {
-      alert(`Persetujuan refund ditolak: Nominal refund (Rp ${ref.nominalRefund.toLocaleString('id-ID')}) melebihi jumlah total dibayar pada pengajuan (Rp ${ref.totalDibayar.toLocaleString('id-ID')}).`);
-      return;
-    }
+    // Nominal refund tidak boleh melebihi yang sudah dibayar di booking (live data)
     if (ref.nominalRefund > targetBooking.jumlahBayar) {
       alert(`Persetujuan refund ditolak: Nominal refund (Rp ${ref.nominalRefund.toLocaleString('id-ID')}) melebihi jumlah yang telah dibayar pada booking (Rp ${targetBooking.jumlahBayar.toLocaleString('id-ID')}).`);
       return;
@@ -671,16 +670,39 @@ export default function DashboardAdmin({
     });
     onUpdateRefunds(updatedRefunds);
 
-    // 2. Restore booking status
+    // (C) Restore booking ke status yang TEPAT sesuai kondisi pembayaran aktual
+    // Jangan hardcode 'Dikonfirmasi' — tentukan berdasarkan jumlahBayar vs totalBayar
     const targetBooking = bookings.find(b => b.id === ref.bookingId);
     if (targetBooking) {
+      const paid = targetBooking.jumlahBayar || 0;
+      const total = targetBooking.totalBayar || 0;
+      const isFullyPaid = paid >= total && total > 0;
+      const isPartiallyPaid = paid > 0 && paid < total;
+
+      // Tentukan status yang paling masuk akal berdasarkan kondisi pembayaran
+      let restoredStatus: Booking['status'];
+      let restoredPayStatus: Booking['statusPembayaran'];
+
+      if (isFullyPaid) {
+        // Sudah lunas — kembalikan ke status aktif (Lunas/Menunggu Pengambilan)
+        restoredStatus = 'Lunas' as const;
+        restoredPayStatus = 'Lunas' as const;
+      } else if (isPartiallyPaid) {
+        // Baru bayar DP — kembalikan ke menunggu pelunasan
+        restoredStatus = 'Menunggu Pelunasan' as const;
+        restoredPayStatus = 'DP Dibayar' as const;
+      } else {
+        // Belum ada pembayaran — kembali menunggu
+        restoredStatus = 'Menunggu Pembayaran' as const;
+        restoredPayStatus = 'Belum Bayar' as const;
+      }
+
       const updatedBookings = bookings.map(b => {
         if (b.id === ref.bookingId) {
-          const isLunas = targetBooking.jumlahBayar >= targetBooking.totalBayar;
           return { 
             ...b, 
-            status: 'Dikonfirmasi' as const,
-            statusPembayaran: isLunas ? 'Lunas' as const : 'DP Dibayar' as const
+            status: restoredStatus,
+            statusPembayaran: restoredPayStatus
           };
         }
         return b;
@@ -1667,15 +1689,37 @@ export default function DashboardAdmin({
     const targetCar = allCars.find(c => c.id === maintCarId);
     if (!targetCar) return;
 
-    // Update car status to maintenance
-    const updatedCars = allCars.map(c => c.id === maintCarId ? { ...c, status: 'maintenance' as const } : c);
-    onUpdateCars(updatedCars);
+    // (C) Cek konflik dengan booking aktif sebelum membuat maintenance
+    const maintStart = new Date();
+    const maintEnd = maintEstimasi
+      ? new Date(maintEstimasi + 'T23:59:59')
+      : new Date(Date.now() + 3 * 24 * 3600 * 1000);
 
+    const TERMINAL_STATUSES = ['selesai', 'dibatalkan', 'ditolak', 'expired', 'kedaluwarsa'];
+    const conflictingBooking = bookings.find(b => {
+      if (b.mobilId !== maintCarId) return false;
+      if (TERMINAL_STATUSES.includes((b.status || '').toLowerCase())) return false;
+      if (!b.tanggalMulai || !b.tanggalSelesai) return false;
+      const bStart = new Date(b.tanggalMulai.replace(' ', 'T'));
+      const bEnd = new Date(b.tanggalSelesai.replace(' ', 'T'));
+      // Overlap: booking belum selesai sebelum maintenance mulai, atau belum mulai setelah maintenance selesai
+      return bStart < maintEnd && bEnd > maintStart;
+    });
+
+    if (conflictingBooking) {
+      alert(
+        `Tidak bisa membuat maintenance: Mobil ini memiliki booking aktif (${conflictingBooking.bookingCode}) ` +
+        `yang bentrok dengan periode maintenance. Selesaikan booking terlebih dahulu.`
+      );
+      return;
+    }
+
+    // TIDAK langsung ubah car.status — biarkan Owner yang approve
+    // (car.status akan di-set ke 'maintenance' saat Owner klik Setujui)
     const newMaint: MaintenanceRecord = {
       id: `maint_${Date.now()}`,
       mobilId: maintCarId,
       mobilNama: targetCar.nama,
-      
       kerusakan: maintKerusakan,
       tanggalPengajuan: new Date().toISOString().split('T')[0],
       estimasiSelesai: maintEstimasi || new Date(Date.now() + 3*24*3600*1000).toISOString().split('T')[0],
@@ -1687,7 +1731,12 @@ export default function DashboardAdmin({
     setMaintKerusakan('');
     setMaintEstimasi('');
 
-    onAddNotification('Maintenance Ditambahkan', `Unit ${targetCar.nama} dimasukkan ke daftar perbaikan.`, 'warning');
+    onAddNotification(
+      'Maintenance Ditambahkan',
+      `Unit ${targetCar.nama} dimasukkan ke daftar perbaikan dan menunggu persetujuan Owner.`,
+      'warning',
+      'user_owner_1'
+    );
   };
 
   // Review moderation handler

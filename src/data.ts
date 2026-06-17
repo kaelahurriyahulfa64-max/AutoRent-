@@ -161,8 +161,10 @@ export const INITIAL_CART: CartItem[] = [];
 
 // Initial Refunds
 export const INITIAL_REFUNDS: Refund[] = [
-  { id: 'REF-001', bookingId: 'BR-111', bookingCode: 'BR-111', userId: 'USR-CUST-1', userNama: 'Kaela', totalDibayar: 0, nominalRefund: 2000000, alasanPembatalan: 'Batal karena jadwal berubah', alasan: 'Batal karena jadwal berubah', status: 'Disetujui', tanggalPengajuan: '2026-06-16T09:00', tanggalPersetujuan: '2026-06-16T09:30', approvedBy: 'Admin AutoRent' },
-  { id: 'REF-002', bookingId: 'BR-112', bookingCode: 'BR-112', userId: 'USR-CUST-1', userNama: 'Kaela', totalDibayar: 0, nominalRefund: 1000000, alasanPembatalan: 'Keperluan mendadak', alasan: 'Keperluan mendadak', status: 'Menunggu Verifikasi', tanggalPengajuan: '2026-06-16T10:00' }
+  // BR-111 jumlahBayar=0, sehingga totalDibayar & nominalRefund = 0 (belum ada pembayaran)
+  { id: 'REF-001', bookingId: 'BR-111', bookingCode: 'BR-111', userId: 'USR-CUST-1', userNama: 'Kaela', totalDibayar: 0, nominalRefund: 0, alasanPembatalan: 'Batal karena jadwal berubah', alasan: 'Batal karena jadwal berubah', status: 'Disetujui', tanggalPengajuan: '2026-06-16T09:00', tanggalPersetujuan: '2026-06-16T09:30', approvedBy: 'Admin AutoRent' },
+  // BR-112 jumlahBayar=0, sehingga totalDibayar & nominalRefund = 0
+  { id: 'REF-002', bookingId: 'BR-112', bookingCode: 'BR-112', userId: 'USR-CUST-1', userNama: 'Kaela', totalDibayar: 0, nominalRefund: 0, alasanPembatalan: 'Keperluan mendadak', alasan: 'Keperluan mendadak', status: 'Menunggu Verifikasi', tanggalPengajuan: '2026-06-16T10:00' }
 ];
 
 // Helper to load application state with default backups
@@ -258,51 +260,73 @@ export function initLocalStorageOnLoad() {
   }
 }
 
-// Dynamically compute current status of a car based on active bookings
-export function getCarStatus(car: Mobil, bookings: Booking[]): 'Tersedia' | 'Disewa' | 'Maintenance' {
+// Status maintenance yang dianggap "aktif" (mobil harus dikunci)
+const ACTIVE_MAINTENANCE_STATUSES = [
+  'Disetujui', 'Menunggu Perbaikan', 'Sedang Diperbaiki', 'Diproses'
+];
+
+/**
+ * Dynamically compute current status of a car based on:
+ * 1. Active MaintenanceRecord (priority over booking check)
+ * 2. car.status field
+ * 3. Active bookings spanning right now
+ *
+ * @param car - The car to check
+ * @param bookings - All bookings
+ * @param maintenanceList - Optional: all maintenance records for accurate status
+ */
+export function getCarStatus(
+  car: Mobil,
+  bookings: Booking[],
+  maintenanceList?: MaintenanceRecord[]
+): 'Tersedia' | 'Disewa' | 'Maintenance' {
   const statusLower = (car.status || '').toLowerCase();
-  
-  // 1. Check if under active maintenance
+
+  // 1. Check active MaintenanceRecord first (source of truth over car.status)
+  if (maintenanceList) {
+    const hasActiveMaint = maintenanceList.some(
+      m => m.mobilId === car.id && ACTIVE_MAINTENANCE_STATUSES.includes(m.status)
+    );
+    if (hasActiveMaint) return 'Maintenance';
+  }
+
+  // 2. Fallback: check car.status field directly
   if (statusLower === 'maintenance') {
     return 'Maintenance';
   }
 
-  // 2. Check if there is an active booking spanning right now
+  // 3. Check if there is an active booking spanning right now
   const now = new Date();
   const activeBooking = bookings.find(b => {
     if (b.mobilId !== car.id) return false;
-    
+
     // Ignore seed bookings for presentation so they start as 'Tersedia'
     if (b.id && b.id.startsWith('BR-')) return false;
 
     const bStatus = (b.status || '').toLowerCase();
     const bPayStatus = (b.statusPembayaran || '').toLowerCase();
-    
+
     // Skip completed or cancelled bookings
-    if (bStatus === 'selesai' || bStatus === 'dibatalkan' || bStatus === 'ditolak' || bStatus === 'expired' || bStatus === 'kedaluwarsa') {
+    if (['selesai', 'dibatalkan', 'ditolak', 'expired', 'kedaluwarsa'].includes(bStatus)) {
       return false;
     }
-    
+
     // Check if booking is paid (DP Dibayar, Lunas, etc.) and confirmed/active
     const isPaid = bPayStatus === 'lunas' || bPayStatus === 'dp dibayar' || bPayStatus === 'dp_dibayar' || bPayStatus === 'menunggu pelunasan';
     const isActive = bStatus === 'dalam sewa' || bStatus === 'sewa aktif' || bStatus === 'aktif' || bStatus === 'menunggu pengambilan' || bStatus === 'lunas' || bStatus === 'dp dibayar' || bStatus === 'dikonfirmasi';
-    
+
     if (!isPaid && !isActive) return false;
 
     if (!b.tanggalMulai || !b.tanggalSelesai) return false;
     const start = new Date(b.tanggalMulai.replace(' ', 'T'));
     const end = new Date(b.tanggalSelesai.replace(' ', 'T'));
-    
+
     return (now >= start && now <= end);
   });
 
-  if (activeBooking) {
-    return 'Disewa';
-  }
+  if (activeBooking) return 'Disewa';
 
-  if (statusLower === 'disewa' || statusLower === 'dibooking') {
-    return 'Disewa';
-  }
+  if (statusLower === 'disewa' || statusLower === 'dibooking') return 'Disewa';
 
   return 'Tersedia';
 }

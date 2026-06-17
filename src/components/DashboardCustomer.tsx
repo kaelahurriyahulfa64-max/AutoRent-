@@ -1695,10 +1695,24 @@ export default function DashboardCustomer({
     onAddNotification('Booking Dibatalkan', `Reservasi ${booking.bookingCode} berhasil dibatalkan.`, 'warning');
   };
 
+  // Helper: cek apakah sudah ada refund aktif untuk booking tertentu (BUG #1 fix)
+  const getActiveRefundByBookingId = (bookingId: string): boolean => {
+    return refunds.some(
+      r => r.bookingId === bookingId && r.status !== 'Ditolak'
+    );
+  };
+
   const handleSubmitRefund = () => {
     if (!bookingForRefund) return;
     if (!refundAlasan.trim()) {
       alert('Alasan pembatalan wajib diisi.');
+      return;
+    }
+
+    // (A) Prevent duplicate refund — block jika sudah ada refund aktif
+    if (getActiveRefundByBookingId(bookingForRefund.id)) {
+      alert('Pengajuan refund untuk booking ini sudah ada dan sedang diproses. Harap tunggu keputusan admin.');
+      setBookingForRefund(null);
       return;
     }
 
@@ -1709,8 +1723,9 @@ export default function DashboardCustomer({
       }
     }
 
+    // (B) totalDibayar & nominalRefund SELALU dari booking.jumlahBayar (source of truth)
     const totalDibayar = bookingForRefund.jumlahBayar || 0;
-    const nominalRefund = totalDibayar; // DP or Full refund 100% of paid amount
+    const nominalRefund = totalDibayar;
 
     const newRefund: Refund = {
       id: 'RFD-' + Math.random().toString(36).substring(2, 9).toUpperCase(),

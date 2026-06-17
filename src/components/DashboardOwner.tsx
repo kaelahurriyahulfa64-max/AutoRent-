@@ -756,9 +756,13 @@ export default function DashboardOwner({
                       {rec.status === 'Menunggu Persetujuan Owner' && (
                         <>
                           <button onClick={() => {
+                            // (A) Setujui: langsung kunci mobil agar tidak bisa dibooking selama menunggu perbaikan
                             const updated = maintenanceList.map(r => r.id === rec.id ? { ...r, status: 'Disetujui' as any } : r);
                             onUpdateMaintenanceList(updated);
-                            onShowToast('Pengajuan maintenance disetujui', 'success');
+                            // Lock car immediately on approval — tidak tunggu "Bayar & Proses"
+                            const updatedCars = allCars.map(c => c.id === rec.mobilId ? { ...c, status: 'maintenance' as any } : c);
+                            if (typeof onUpdateCars === 'function') onUpdateCars(updatedCars);
+                            onShowToast('Maintenance disetujui & mobil dikunci dari booking baru', 'success');
                           }} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs transition cursor-pointer">
                             Setujui
                           </button>
@@ -779,10 +783,7 @@ export default function DashboardOwner({
                             const updated = maintenanceList.map(r => r.id === rec.id ? { ...r, status: 'Sedang Diperbaiki' as any, biaya: Number(cost) } : r);
                             onUpdateMaintenanceList(updated);
                             onShowToast('Pembayaran berhasil diproses', 'success');
-                            
-                            // Also update car status to maintenance
-                            const updatedCars = allCars.map(c => c.id === rec.mobilId ? { ...c, status: 'maintenance' as any } : c);
-                            if (typeof onUpdateCars === 'function') onUpdateCars(updatedCars);
+                            // Car sudah dikunci sejak Setujui, tidak perlu diubah lagi
                           }
                         }} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs transition flex justify-center items-center gap-1 cursor-pointer">
                           <Wallet className="w-3.5 h-3.5" />
@@ -791,11 +792,30 @@ export default function DashboardOwner({
                       )}
 
                       {(rec.status === 'Sedang Diperbaiki' || rec.status === 'Menunggu Perbaikan') && (
-                        <div className="w-full bg-slate-50 border border-slate-200 text-slate-500 font-bold py-2 rounded-xl text-xs text-center">
-                          {rec.biaya ? `Rp ${rec.biaya.toLocaleString('id-ID')}` : 'Sedang Diproses'}
-                        </div>
+                        <>
+                          <div className="w-full bg-slate-50 border border-slate-200 text-slate-500 font-bold py-2 rounded-xl text-xs text-center">
+                            {rec.biaya ? `Rp ${rec.biaya.toLocaleString('id-ID')}` : 'Sedang Diproses'}
+                          </div>
+                          {/* (B) Tombol Selesai Maintenance — state terminal yang sebelumnya hilang */}
+                          <button onClick={() => {
+                            const updated = maintenanceList.map(r =>
+                              r.id === rec.id ? { ...r, status: 'Selesai' as any } : r
+                            );
+                            onUpdateMaintenanceList(updated);
+                            // Release car kembali ke tersedia
+                            const updatedCars = allCars.map(c =>
+                              c.id === rec.mobilId ? { ...c, status: 'tersedia' as any } : c
+                            );
+                            if (typeof onUpdateCars === 'function') onUpdateCars(updatedCars);
+                            onShowToast(`Maintenance selesai. ${rec.mobilNama} kembali tersedia.`, 'success');
+                          }} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs transition flex justify-center items-center gap-1 cursor-pointer">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Selesai Maintenance
+                          </button>
+                        </>
                       )}
                     </div>
+
                   </div>
                 );
               })}
