@@ -29,7 +29,7 @@ export interface Mobil {
   kapasitas: number;
   hargaSewa: number; // per hari
   foto: string;
-  status: 'tersedia' | 'disewa' | 'maintenance' | 'Tersedia' | 'Menunggu Pembayaran' | 'Dibooking' | 'Disewa' | 'Maintenance';
+  status: 'tersedia' | 'disewa' | 'maintenance' | 'Tersedia' | 'Disewa' | 'Maintenance';
   platNomor: string;
   aktif?: boolean;
   tahun?: number;

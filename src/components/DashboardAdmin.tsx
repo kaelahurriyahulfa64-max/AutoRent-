@@ -474,7 +474,7 @@ export default function DashboardAdmin({
     if (!isDendaPayment) {
       if (bk.mobilId) {
         const updatedCars = allCars.map(c => {
-          if (c.id === bk.mobilId) return { ...c, status: 'Dibooking' as const };
+          if (c.id === bk.mobilId) return { ...c, status: 'Disewa' as const };
           return c;
         });
         onUpdateCars(updatedCars);
@@ -731,7 +731,7 @@ export default function DashboardAdmin({
 
     if (bk.mobilId) {
       const updatedCars = allCars.map(c => {
-        if (c.id === bk.mobilId) return { ...c, status: 'Dibooking' as const };
+        if (c.id === bk.mobilId) return { ...c, status: 'Disewa' as const };
         return c;
       });
       onUpdateCars(updatedCars);
@@ -874,7 +874,7 @@ export default function DashboardAdmin({
       const isDenda = targetBooking.statusPembayaran === 'Menunggu Pelunasan Denda' || targetBooking.status === 'Menunggu Pelunasan Denda';
       if (!isDenda) {
         const updatedCars = allCars.map(c => {
-          if (c.id === targetBooking.mobilId) return { ...c, status: 'Dibooking' as const };
+          if (c.id === targetBooking.mobilId) return { ...c, status: 'Disewa' as const };
           return c;
         });
         onUpdateCars(updatedCars);
@@ -1317,7 +1317,7 @@ export default function DashboardAdmin({
     if (!bk) return;
 
     const { days, penalty } = calculateDelayAndPenalty(bk.tanggalSelesai, retDate);
-    const finalTotal = bk.totalSewa + penalty;
+    const finalTotal = (bk.totalSewa || bk.totalBayar || 0) + penalty;
     const remainingBalance = Math.max(0, finalTotal - bk.jumlahBayar);
     const isFullyPaid = remainingBalance <= 0;
 
@@ -1327,6 +1327,7 @@ export default function DashboardAdmin({
           ...b,
           denda: penalty,
           statusDenda: penalty > 0 ? ('Belum Dibayar' as const) : ('none' as const),
+          totalSewa: b.totalSewa || b.totalBayar || 0,
           totalAkhir: finalTotal,
           sisaPelunasan: remainingBalance,
           status: penalty > 0 ? ('Terlambat' as const) : ('Tepat Waktu' as const),
@@ -1821,15 +1822,14 @@ export default function DashboardAdmin({
   const mobilCountPct = Math.round((mobilBookingsCount / totalLayananCount) * 100);
   const driverCountPct = 100 - mobilCountPct;
 
-  // Normalize status comparison to handle both capitalized & lowercase variants
-  const isCarTersedia = (c: Mobil) => ['tersedia', 'Tersedia'].includes(c.status) && c.aktif !== false;
-  const isCarDisewa = (c: Mobil) => ['disewa', 'Disewa', 'Dalam Sewa', 'Sewa Aktif'].includes(c.status);
-  const isCarMaintenance = (c: Mobil) => ['maintenance', 'Maintenance'].includes(c.status);
-  const isCarDibooking = (c: Mobil) => ['Dibooking', 'Menunggu Pembayaran', 'Menunggu Pengambilan'].includes(c.status);
+  // Normalize status comparison using getCarStatus helper (Single Source of Truth)
+  const isCarTersedia = (c: Mobil) => getCarStatus(c, bookings) === 'Tersedia';
+  const isCarDisewa = (c: Mobil) => getCarStatus(c, bookings) === 'Disewa';
+  const isCarMaintenance = (c: Mobil) => getCarStatus(c, bookings) === 'Maintenance';
+  
   const armadaTersedia = allCars.filter(isCarTersedia).length;
   const armadaDisewa = allCars.filter(isCarDisewa).length;
   const armadaMaintenance = allCars.filter(isCarMaintenance).length;
-  const armadaDibooking = allCars.filter(isCarDibooking).length;
   const totalArmada = allCars.length || 1;
 
   return (
@@ -2081,11 +2081,6 @@ export default function DashboardAdmin({
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
                   <span className="text-xs text-slate-600 font-medium flex-1">Bengkel</span>
                   <span className="text-xs font-bold text-slate-800">{armadaMaintenance}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
-                  <span className="text-xs text-slate-600 font-medium flex-1">Lainnya</span>
-                  <span className="text-xs font-bold text-slate-800">{armadaDibooking}</span>
                 </div>
               </div>
             </div>
@@ -2644,11 +2639,9 @@ export default function DashboardAdmin({
 
                           <div className="flex flex-col items-end gap-1">
                             <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
-                              dynamicStatus === 'Tersedia' ? 'bg-emerald-50 text-emerald-700' :
-                              dynamicStatus === 'Menunggu Pembayaran' ? 'bg-amber-50 text-amber-700 border border-amber-200/50' :
-                              dynamicStatus === 'Dibooking' ? 'bg-blue-50 text-blue-700' :
-                              dynamicStatus === 'Disewa' ? 'bg-indigo-50 text-indigo-700' :
-                              'bg-rose-50 text-rose-700'
+                              dynamicStatus === 'Tersedia' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                              dynamicStatus === 'Disewa' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                              'bg-rose-50 text-rose-700 border border-rose-100'
                             }`}>
                               {dynamicStatus}
                             </span>

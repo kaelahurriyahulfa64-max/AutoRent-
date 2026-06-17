@@ -17,6 +17,9 @@ import { getStoredState, setStoredState, initLocalStorageOnLoad, getCarStatus, I
 import { Sparkles, HelpCircle, Layers, FileText, CheckCircle, Info, Star, Car, Users, Calendar, Calendar as CalendarIcon, Shield, UserCheck, TrendingUp, Home, ClipboardList, ShoppingCart, User as UserIcon, PhoneCall, LayoutDashboard, CreditCard, Receipt, Bell, Settings, Settings as SettingsIcon, LogOut, FileCheck, CheckSquare, ShieldCheck, ShieldAlert, Award, AlertCircle, MapPin, Wrench, RefreshCw, Search, Clock, X } from 'lucide-react';
 import { ToastContainer, ConfirmModal, ToastData, ConfirmConfig, ToastType } from './components/ToastAndModal';
 
+// Pure Guest user object — used as default when no session is active
+const GUEST_USER: User = { id: 'guest', name: 'Guest', email: '', phone: '', role: 'customer' };
+
 export default function App() {
   // Global State Managers — initLocalStorageOnLoad runs FIRST, synchronously
   const [users, setUsers] = useState<User[]>(() => {
@@ -37,7 +40,8 @@ export default function App() {
     } catch (e) {
       console.error('Error loading session from storage:', e);
     }
-    return list.find(u => u.role === 'customer') || list[0] || { id: 'guest', name: 'Guest', email: '', phone: '', role: 'customer' };
+    // No valid session — start as Guest (NEVER auto-login to any customer account)
+    return GUEST_USER;
   });
 
 
@@ -157,11 +161,17 @@ export default function App() {
   };
 
   const processMidtransWebhook = async (wh: { id?: string; orderId: string; transactionStatus: string; grossAmount: number; paymentType: string; transactionTime: string; }): Promise<boolean> => {
-    let updatedBookings = [...bookings];
-    let updatedPayments = [...payments];
-    let updatedInvoices = [...invoices];
-    let updatedCars = [...cars];
-    let updatedDrivers = [...drivers];
+    const currentBookings = getStoredState('bookings', INITIAL_BOOKINGS);
+    const currentPayments = getStoredState('payments', INITIAL_PAYMENTS);
+    const currentInvoices = getStoredState('invoices', INITIAL_INVOICES);
+    const currentCars = getStoredState('mobil', INITIAL_MOBIL);
+    const currentDrivers = getStoredState('drivers', INITIAL_DRIVERS);
+
+    let updatedBookings = [...currentBookings];
+    let updatedPayments = [...currentPayments];
+    let updatedInvoices = [...currentInvoices];
+    let updatedCars = [...currentCars];
+    let updatedDrivers = [...currentDrivers];
     let stateChanged = false;
 
     const bk = updatedBookings.find(b => wh.orderId && (
@@ -268,22 +278,46 @@ export default function App() {
       }
 
       if (bk.mobilId) {
-        updatedCars = updatedCars.map(c => c.id === bk.mobilId ? { ...c, status: 'Dibooking' as const } : c);
+        updatedCars = updatedCars.map(c => c.id === bk.mobilId ? { ...c, status: 'Disewa' as const } : c);
       }
       if (bk.driverId) {
         updatedDrivers = updatedDrivers.map(d => d.id === bk.driverId ? { ...d, status: 'booking' as const } : d);
       }
 
-      const newNo: AppNotification = {
-        id: `nt_wh_${Date.now()}`,
+      const formattedTimestamp = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().replace('T', ' ').substring(0, 16);
+
+      // Create target notifications
+      const customerNotif: AppNotification = {
+        id: `nt_cust_${Date.now()}`,
         userId: bk.userId,
-        title: 'Pembayaran Diterima (Gateway)',
-        message: `Pembayaran booking ${bk.bookingCode} sebesar Rp ${amount.toLocaleString('id-ID')} berhasil diverifikasi otomatis.`,
+        title: 'Pembayaran Berhasil',
+        message: 'Pembayaran berhasil. Invoice telah dibuat.',
         type: 'success',
         read: false,
-        timestamp: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().replace('T', ' ').substring(0, 16)
+        timestamp: formattedTimestamp
       };
-      setNotifications(prev => [newNo, ...prev]);
+
+      const adminNotif: AppNotification = {
+        id: `nt_admin_${Date.now()}`,
+        userId: 'user_admin_1',
+        title: 'Pembayaran Booking Diterima',
+        message: `Pembayaran booking ${bk.bookingCode} berhasil diterima.`,
+        type: 'success',
+        read: false,
+        timestamp: formattedTimestamp
+      };
+
+      const ownerNotif: AppNotification = {
+        id: `nt_owner_${Date.now()}`,
+        userId: 'user_owner_1',
+        title: 'Transaksi Baru Tercatat',
+        message: 'Transaksi baru berhasil tercatat.',
+        type: 'success',
+        read: false,
+        timestamp: formattedTimestamp
+      };
+
+      setNotifications(prev => [customerNotif, adminNotif, ownerNotif, ...prev]);
       stateChanged = true;
     } else if (wh.transactionStatus === 'expire' || wh.transactionStatus === 'cancel' || wh.transactionStatus === 'deny') {
       updatedBookings = updatedBookings.map(b => {
@@ -303,6 +337,8 @@ export default function App() {
         updatedDrivers = updatedDrivers.map(d => d.id === bk.driverId ? { ...d, status: 'aktif' as const } : d);
       }
 
+      const formattedTimestamp = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().replace('T', ' ').substring(0, 16);
+
       const newNo: AppNotification = {
         id: `nt_wh_fail_${Date.now()}`,
         userId: bk.userId,
@@ -310,44 +346,40 @@ export default function App() {
         message: `Pembayaran booking ${bk.bookingCode} gagal, dibatalkan, atau kadaluarsa. Jadwal telah dibebaskan.`,
         type: 'warning',
         read: false,
-        timestamp: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().replace('T', ' ').substring(0, 16)
+        timestamp: formattedTimestamp
       };
       setNotifications(prev => [newNo, ...prev]);
       stateChanged = true;
     }
 
     if (stateChanged) {
+      // Synchronously write to localStorage
+      setStoredState('bookings', updatedBookings);
+      setStoredState('payments', updatedPayments);
+      setStoredState('invoices', updatedInvoices);
+      setStoredState('mobil', updatedCars);
+      setStoredState('drivers', updatedDrivers);
+
+      // Update React state
       setBookings(updatedBookings);
       setPayments(updatedPayments);
       setInvoices(updatedInvoices);
       setCars(updatedCars);
       setDrivers(updatedDrivers);
     }
-
     return stateChanged;
   };
 
-  // Current page router state
-  const [rawActiveTab, setRawActiveTab] = useState<string>(() => {
-    try {
-      const token = localStorage.getItem('autorent_session_token');
-      const expiry = localStorage.getItem('autorent_session_expiry');
-      if (token && expiry && Number(expiry) > Date.now()) {
-        const parts = token.split('_');
-        const userId = parts.slice(2).join('_');
-        const list = getStoredState('users', INITIAL_USERS);
-        const matched = list.find(u => u.id === userId);
-        if (matched) {
-          if (matched.role === 'admin') return 'dashboard-admin';
-          if (matched.role === 'owner') return 'dashboard-owner';
-          return 'dashboard-customer';
-        }
-      }
-    } catch (e) {
-      console.error('Error loading tab from session:', e);
+  // Expose processMidtransWebhook for E2E testing in development mode
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__autorentProcessWebhook = processMidtransWebhook;
     }
-    return 'landing';
   });
+
+  // Current page router state
+  const [rawActiveTab, setRawActiveTab] = useState<string>('landing');
+  const [loginMode, setLoginMode] = useState<'login' | 'register'>('login');
   
   const [customerActiveSubTab, setRawCustomerActiveSubTab] = useState<string>('dashboard');
   const [selectedBookingItem, setSelectedBookingItem] = useState<{ type: 'rental' | 'driver'; id: string } | null>(null);
@@ -585,12 +617,6 @@ export default function App() {
 
         const processedStr = localStorage.getItem('autorent_processed_webhooks') || '[]';
         let processed: string[] = JSON.parse(processedStr);
-        let updatedBookings = [...bookings];
-        let updatedPayments = [...payments];
-        let updatedInvoices = [...invoices];
-        let updatedCars = [...cars];
-        let updatedDrivers = [...drivers];
-        let stateChanged = false;
 
         for (const wh of webhooks) {
           if (processed.includes(wh.id)) {
@@ -612,7 +638,6 @@ export default function App() {
           });
 
           if (webhookProcessed) {
-            stateChanged = true;
             processed.push(wh.id);
             localStorage.setItem('autorent_processed_webhooks', JSON.stringify(processed));
           }
@@ -623,14 +648,6 @@ export default function App() {
             body: JSON.stringify({ id: wh.id })
           });
         }
-
-        if (stateChanged) {
-          setBookings(updatedBookings);
-          setPayments(updatedPayments);
-          setInvoices(updatedInvoices);
-          setCars(updatedCars);
-          setDrivers(updatedDrivers);
-        }
       } catch (err) {
         console.error('Failed polling webhooks:', err);
       }
@@ -639,7 +656,7 @@ export default function App() {
     pollWebhooks();
     const interval = setInterval(pollWebhooks, 1000);
     return () => clearInterval(interval);
-  }, [bookings, payments, invoices, cars, drivers]);
+  }, []);
 
   // Handle Dynamic User Role toggles
   const handleRoleChange = (role: 'customer' | 'admin' | 'owner') => {
@@ -677,8 +694,14 @@ export default function App() {
   };
 
   const handleBookShortcut = (type: 'rental' | 'driver', id: string) => {
+    // If user is Guest, save pending booking and redirect to login
+    if (currentUser.id === 'guest') {
+      localStorage.setItem('autorent_pending_booking', JSON.stringify({ type, id }));
+      handleAddNotification('Akses Terbatas', 'Silakan login atau daftar terlebih dahulu untuk melakukan pemesanan.', 'warning');
+      setActiveTab('login');
+      return;
+    }
     setSelectedBookingItem({ type, id });
-    handleRoleChange('customer'); // Must switch to customer to checkout
     setActiveTab('booking');
   };
 
@@ -690,10 +713,8 @@ export default function App() {
         localStorage.removeItem('autorent_session_token');
         localStorage.removeItem('autorent_session_expiry');
         
-        // Set default user
-        const list = getStoredState('users', INITIAL_USERS);
-        const defaultUser = list.find(u => u.role === 'customer') || list[0] || { id: 'guest', name: 'Guest', email: '', phone: '', role: 'customer' };
-        setCurrentUser(defaultUser);
+        // Return to pure Guest — NEVER auto-login to any customer
+        setCurrentUser(GUEST_USER);
         
         setRawActiveTab('landing'); // Use raw setter to avoid double loading trigger
         handleAddNotification('Sesi Berakhir', 'Anda berhasil keluar dari sistem.', 'info');
@@ -708,13 +729,11 @@ export default function App() {
       const expiry = localStorage.getItem('autorent_session_expiry');
       if (token && expiry) {
         if (Date.now() > Number(expiry)) {
-          // Session expired!
+          // Session expired — return to pure Guest
           localStorage.removeItem('autorent_session_token');
           localStorage.removeItem('autorent_session_expiry');
           
-          const list = getStoredState('users', INITIAL_USERS);
-          const defaultUser = list.find(u => u.role === 'customer') || list[0] || { id: 'guest', name: 'Guest', email: '', phone: '', role: 'customer' };
-          setCurrentUser(defaultUser);
+          setCurrentUser(GUEST_USER);
           
           setActiveTab('landing');
           handleAddNotification(
@@ -756,7 +775,8 @@ export default function App() {
             cart={cart}
             customerActiveSubTab={customerActiveSubTab}
             setCustomerActiveSubTab={setCustomerActiveSubTab}
-            
+            setLoginMode={setLoginMode}
+            onLogout={handleLogout}
           />
         </div>
 
@@ -1181,6 +1201,7 @@ export default function App() {
                 <div className="w-full">
                   <LandingPage
                   cars={cars}
+                  bookings={bookings}
                   drivers={drivers}
                   reviews={reviews}
                   setActiveTab={setActiveTab}
@@ -1492,7 +1513,7 @@ export default function App() {
           onRegisterUser={handleUpdateUsers}
           onAddNotification={handleAddNotification}
           onBackToHome={() => setActiveTab('landing')}
-          initialMode="login"
+          initialMode={loginMode}
           setActiveTab={setActiveTab}
           onShowToast={showToast}
           onShowConfirm={showConfirm}

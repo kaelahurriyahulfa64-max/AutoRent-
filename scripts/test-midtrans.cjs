@@ -1,6 +1,6 @@
 const https = require('https');
-const serverKey = process.env.MIDTRANS_SERVER_KEY;
-if (!serverKey) throw new Error("Midtrans configuration not found");
+const serverKey = process.env.VITE_MIDTRANS_SERVER_KEY || process.env.MIDTRANS_SERVER_KEY;
+if (!serverKey) throw new Error("Midtrans server key configuration not found");
 const authString = Buffer.from(serverKey + ':').toString('base64');
 
 const options = {

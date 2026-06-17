@@ -535,12 +535,12 @@ export default function DashboardCustomer({
     onUpdateBookings([...generatedBookings, ...bookings]);
     onUpdateInvoices([...generatedInvoices, ...invoices]);
 
-    // Update vehicle statuses to Dibooking
+    // Update vehicle statuses to Tersedia (payment not yet completed)
     let updatedCarsList = [...allCars];
     itemsToCheckout.forEach(item => {
       if (item.mobilId) {
         updatedCarsList = updatedCarsList.map(c => 
-          c.id === item.mobilId ? { ...c, status: 'Dibooking' as const } : c
+          c.id === item.mobilId ? { ...c, status: 'Tersedia' as const } : c
         );
       }
     });
@@ -738,8 +738,14 @@ export default function DashboardCustomer({
         setActiveOrderId(orderId);
         onUpdateBookings(bookings.map(b => b.id === selectedBookingForPay.id ? { ...b, midtransOrderId: orderId } : b));
         try {
+          const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
           const serverKey = settings.midtransServerKey || import.meta.env.VITE_MIDTRANS_SERVER_KEY;
-          if (!serverKey) throw new Error("Midtrans configuration not found");
+          if (!clientKey || !serverKey) {
+            if (!clientKey) console.error("Missing Midtrans Client Key");
+            if (!serverKey) console.error("Missing Midtrans Server Key");
+            if (!clientKey) throw new Error("Missing Midtrans Client Key");
+            throw new Error("Missing Midtrans Server Key");
+          }
           const authString = btoa(`${serverKey}:`);
           const response = await fetch('/api-midtrans/snap/v1/transactions', {
             method: 'POST',
@@ -788,8 +794,14 @@ export default function DashboardCustomer({
     const pollStatus = async () => {
       if (!isPolling) return;
       try {
+        const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
         const serverKey = settings.midtransServerKey || import.meta.env.VITE_MIDTRANS_SERVER_KEY;
-        if (!serverKey) throw new Error("Midtrans configuration not found");
+        if (!clientKey || !serverKey) {
+          if (!clientKey) console.error("Missing Midtrans Client Key");
+          if (!serverKey) console.error("Missing Midtrans Server Key");
+          if (!clientKey) throw new Error("Missing Midtrans Client Key");
+          throw new Error("Missing Midtrans Server Key");
+        }
         const authString = btoa(`${serverKey}:`);
         // Use the new /api-midtrans-core proxy to avoid CORS
         const response = await fetch(`/api-midtrans-core/v2/${activeOrderId}/status`, {
@@ -802,45 +814,40 @@ export default function DashboardCustomer({
         if (response.ok) {
           const data = await response.json();
           if (data.transaction_status === 'settlement' || data.transaction_status === 'capture') {
-            await onProcessGatewayWebhook({
+            const processed = await onProcessGatewayWebhook({
               orderId: data.order_id,
               transactionStatus: data.transaction_status,
               grossAmount: Number(data.gross_amount || data.grossAmount || 0),
               paymentType: data.payment_type || data.paymentType || 'Payment Gateway',
               transactionTime: data.transaction_time || data.transactionTime || new Date().toISOString()
             });
-            // Success! Simulate Midtrans Webhook
-            await onProcessGatewayWebhook({
-              orderId: data.order_id,
-              transactionStatus: data.transaction_status,
-              grossAmount: Number(data.gross_amount || data.grossAmount || 0),
-              paymentType: data.payment_type || data.paymentType || 'Payment Gateway',
-              transactionTime: data.transaction_time || data.transactionTime || new Date().toISOString()
-            });
-            await fetch('/api/midtrans-webhook', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                order_id: data.order_id,
-                transaction_status: data.transaction_status,
-                gross_amount: data.gross_amount,
-                payment_type: data.payment_type,
-                transaction_time: data.transaction_time || new Date().toISOString()
-              })
-            });
-            
-            // Wait a brief moment for App.tsx to poll and update global state
+
+            if (processed) {
+              // Also store webhook in file for server-side logging (best-effort, ignores 404)
+              fetch('/api/midtrans-webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  order_id: data.order_id,
+                  transaction_status: data.transaction_status,
+                  gross_amount: data.gross_amount,
+                  payment_type: data.payment_type,
+                  transaction_time: data.transaction_time || new Date().toISOString()
+                })
+              }).catch(() => {}); // Ignore if server endpoint not available
+            }
+
+            // Navigate to invoice after brief delay
             setTimeout(() => {
               if (selectedBookingForPay) {
                 setViewingInvoiceDetailId(selectedBookingForPay.id);
-                  onSetActiveTab('invoice');
+                onSetActiveTab('invoice');
               }
-              
               isPolling = false;
               setActiveOrderId('');
               setDynamicPaymentUrl('');
               setSelectedBookingForPay(null);
-            }, 6000);
+            }, 2000);
             
           } else if (data.transaction_status === 'expire' || data.transaction_status === 'cancel' || data.transaction_status === 'deny') {
             await onProcessGatewayWebhook({
@@ -1094,7 +1101,7 @@ export default function DashboardCustomer({
               isClickable = true;
             } else if (status === 'booked') {
               bgClass = 'bg-rose-50 text-rose-500 border border-rose-200/20 cursor-not-allowed line-through';
-              titleText = 'Sudah Dibooking';
+              titleText = 'Sudah Disewa';
             } else if (status === 'pending') {
               bgClass = 'bg-amber-50 text-amber-600 border border-amber-250/20 cursor-not-allowed';
               titleText = 'Menunggu Pembayaran';
@@ -1139,7 +1146,7 @@ export default function DashboardCustomer({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-            <span>Dibooking (Merah)</span>
+            <span>Disewa (Merah)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
@@ -1437,7 +1444,7 @@ export default function DashboardCustomer({
       const isDenda = selectedBookingForPay.statusPembayaran === 'Menunggu Pelunasan Denda' || selectedBookingForPay.status === 'Menunggu Pelunasan Denda';
       if (!isDenda && selectedBookingForPay.mobilId) {
         const updatedCars = allCars.map(c => {
-          if (c.id === selectedBookingForPay.mobilId) return { ...c, status: 'Dibooking' as const };
+          if (c.id === selectedBookingForPay.mobilId) return { ...c, status: 'Disewa' as const };
           return c;
         });
         onUpdateCars(updatedCars);
@@ -3203,12 +3210,8 @@ export default function DashboardCustomer({
                             <div className="relative h-44 bg-slate-50 select-none">
                               <img src={car.foto} alt={car.nama} className="w-full h-full object-cover" />
                               {(() => {
-                                const currentStatus = getCarStatus(car, bookings);
+                                const currentStatus = 'Tersedia';
                                 let badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-100';
-                                if (currentStatus === 'Menunggu Pembayaran') badgeClass = 'bg-amber-50 text-amber-700 border border-amber-100';
-                                else if (currentStatus === 'Dibooking') badgeClass = 'bg-blue-50 text-blue-700 border border-blue-100';
-                                else if (currentStatus === 'Disewa') badgeClass = 'bg-rose-50 text-rose-700 border border-rose-100';
-                                else if (currentStatus === 'Maintenance') badgeClass = 'bg-slate-100 text-slate-650 border border-slate-200';
                                 
                                 return (
                                   <span className={`absolute top-4 right-4 px-2.5 py-1 rounded-full text-[9px] font-black uppercase ${badgeClass}`}>

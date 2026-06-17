@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/api/midtrans-webhook", "destination": "/api/midtrans-webhook" },
+    { "source": "/api/webhook-payments/clear", "destination": "/api/webhook-payments/clear" },
+    { "source": "/api/webhook-payments", "destination": "/api/webhook-payments/index" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

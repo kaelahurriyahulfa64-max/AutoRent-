@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Booking, Invoice, Pembayaran, Mobil, Driver, User, Review, Refund, MaintenanceRecord } from '../types';
+import { getCarStatus } from '../data';
 import { 
   TrendingUp, FileText, RefreshCw, Car, Users, 
   Wallet, Calendar, ClipboardList, CheckCircle,
@@ -142,8 +143,8 @@ export default function DashboardOwner({
   const diffTransaksi = prevTransaksi ? Math.round(((totalTransaksi - prevTransaksi) / prevTransaksi) * 100) : 0;
 
   const kendaraanAktif = allCars.filter(c => {
-    const s = (c.status || '').toLowerCase();
-    return ['tersedia', 'disewa', 'dalam sewa', 'sewa aktif'].includes(s) && c.aktif !== false;
+    const status = getCarStatus(c, bookings);
+    return (status === 'Tersedia' || status === 'Disewa') && c.aktif !== false;
   }).length;
   
   const totalPelanggan = customerUsers.length;
@@ -151,7 +152,7 @@ export default function DashboardOwner({
   const prevPelangganBaru = customerUsers.filter(c => isDateInPreviousFilter(c.joinDate || new Date().toISOString())).length;
   const diffPelanggan = prevPelangganBaru ? Math.round(((pelangganBaru - prevPelangganBaru) / prevPelangganBaru) * 100) : 0;
 
-  const totalRefundAmount = filteredRefunds.reduce((sum, r) => sum + r.nominal, 0);
+  const totalRefundAmount = filteredRefunds.reduce((sum, r) => sum + (r.nominalRefund || 0), 0);
   const totalMaintenanceCost = maintenanceList
     .filter(m => (m.status === 'Selesai' || m.status === 'Sedang Diperbaiki') && isDateInFilter(m.tanggalPengajuan))
     .reduce((sum, m) => sum + (m.biaya || 0), 0);
@@ -161,7 +162,7 @@ export default function DashboardOwner({
   const prevMaintenanceCost = maintenanceList
     .filter(m => (m.status === 'Selesai' || m.status === 'Sedang Diperbaiki') && isDateInPreviousFilter(m.tanggalPengajuan))
     .reduce((sum, m) => sum + (m.biaya || 0), 0);
-  const prevPengeluaran = prevRefunds.reduce((sum, r) => sum + r.nominal, 0) + prevMaintenanceCost;
+  const prevPengeluaran = prevRefunds.reduce((sum, r) => sum + (r.nominalRefund || 0), 0) + prevMaintenanceCost;
   const prevLabaBersih = prevPendapatan - prevPengeluaran;
   const diffLabaBersih = prevLabaBersih ? Math.round(((labaBersih - prevLabaBersih) / prevLabaBersih) * 100) : 0;
 
@@ -522,29 +523,31 @@ export default function DashboardOwner({
             {/* Kendaraan Terpopuler */}
             <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
               <h3 className="font-bold text-slate-800 text-sm mb-4">Daftar Kendaraan Terpopuler</h3>
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="text-slate-400 border-b border-slate-100">
-                    <th className="pb-3 font-semibold w-10">No.</th>
-                    <th className="pb-3 font-semibold">Mobil</th>
-                    <th className="pb-3 font-semibold text-center">Total Sewa</th>
-                    <th className="pb-3 font-semibold text-right">Persentase</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {popularCars.map((car, idx) => (
-                    <tr key={idx}>
-                      <td className="py-3 text-slate-500 font-mono">{car.no}</td>
-                      <td className="py-3 font-bold text-slate-700">{car.mobil}</td>
-                      <td className="py-3 text-center font-mono">{car.totalSewa}</td>
-                      <td className="py-3 text-right font-bold text-slate-600">{car.persentase}%</td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-slate-400 border-b border-slate-100">
+                      <th className="pb-3 font-semibold w-10">No.</th>
+                      <th className="pb-3 font-semibold">Mobil</th>
+                      <th className="pb-3 font-semibold text-center">Total Sewa</th>
+                      <th className="pb-3 font-semibold text-right">Persentase</th>
                     </tr>
-                  ))}
-                  {popularCars.length === 0 && (
-                    <tr><td colSpan={4} className="py-4 text-center text-slate-400">Tidak ada data</td></tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {popularCars.map((car, idx) => (
+                      <tr key={idx}>
+                        <td className="py-3 text-slate-500 font-mono">{car.no}</td>
+                        <td className="py-3 font-bold text-slate-700">{car.mobil}</td>
+                        <td className="py-3 text-center font-mono">{car.totalSewa}</td>
+                        <td className="py-3 text-right font-bold text-slate-600">{car.persentase}%</td>
+                      </tr>
+                    ))}
+                    {popularCars.length === 0 && (
+                      <tr><td colSpan={4} className="py-4 text-center text-slate-400">Tidak ada data</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Ringkasan Keuangan & Laporan */}

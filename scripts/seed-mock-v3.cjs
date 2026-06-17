@@ -35,37 +35,37 @@ const bookings = `[
 ]`;
 
 const payments = `[
-  { id: 'PAY-J1', bookingId: 'BR-101', bookingCode: 'BR-101', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 5000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-01-09T10:05', tipeBayar: 'pelunasan' },
-  { id: 'PAY-J2', bookingId: 'BR-101', bookingCode: 'BR-101', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 3000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-01-09T10:06', tipeBayar: 'pelunasan' },
+  { id: 'PAY-J1', bookingId: 'BR-101', bookingCode: 'BR-101', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 5000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-01-09T10:05', tipeBayar: 'pelunasan' },
+  { id: 'PAY-J2', bookingId: 'BR-101', bookingCode: 'BR-101', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 3000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-01-09T10:06', tipeBayar: 'pelunasan' },
 
-  { id: 'PAY-F1', bookingId: 'BR-102', bookingCode: 'BR-102', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 6000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-02-14T10:05', tipeBayar: 'pelunasan' },
-  { id: 'PAY-F2', bookingId: 'BR-102', bookingCode: 'BR-102', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 4000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-02-14T10:06', tipeBayar: 'pelunasan' },
+  { id: 'PAY-F1', bookingId: 'BR-102', bookingCode: 'BR-102', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 6000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-02-14T10:05', tipeBayar: 'pelunasan' },
+  { id: 'PAY-F2', bookingId: 'BR-102', bookingCode: 'BR-102', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 4000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-02-14T10:06', tipeBayar: 'pelunasan' },
 
-  { id: 'PAY-M1', bookingId: 'BR-103', bookingCode: 'BR-103', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 7000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-03-19T10:05', tipeBayar: 'pelunasan' },
-  { id: 'PAY-M2', bookingId: 'BR-103', bookingCode: 'BR-103', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 5000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-03-19T10:06', tipeBayar: 'pelunasan' },
+  { id: 'PAY-M1', bookingId: 'BR-103', bookingCode: 'BR-103', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 7000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-03-19T10:05', tipeBayar: 'pelunasan' },
+  { id: 'PAY-M2', bookingId: 'BR-103', bookingCode: 'BR-103', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 5000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-03-19T10:06', tipeBayar: 'pelunasan' },
 
-  { id: 'PAY-A1', bookingId: 'BR-104', bookingCode: 'BR-104', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 9000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-04-04T10:05', tipeBayar: 'pelunasan' },
-  { id: 'PAY-A2', bookingId: 'BR-104', bookingCode: 'BR-104', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 6000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-04-04T10:06', tipeBayar: 'pelunasan' },
+  { id: 'PAY-A1', bookingId: 'BR-104', bookingCode: 'BR-104', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 9000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-04-04T10:05', tipeBayar: 'pelunasan' },
+  { id: 'PAY-A2', bookingId: 'BR-104', bookingCode: 'BR-104', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 6000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-04-04T10:06', tipeBayar: 'pelunasan' },
 
-  { id: 'PAY-Y1', bookingId: 'BR-003', bookingCode: 'BR-003', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 12000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-05-09T10:05', tipeBayar: 'pelunasan' },
-  { id: 'PAY-Y2', bookingId: 'BR-003', bookingCode: 'BR-003', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 6000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-05-09T10:06', tipeBayar: 'pelunasan' },
+  { id: 'PAY-Y1', bookingId: 'BR-003', bookingCode: 'BR-003', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 12000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-05-09T10:05', tipeBayar: 'pelunasan' },
+  { id: 'PAY-Y2', bookingId: 'BR-003', bookingCode: 'BR-003', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 6000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-05-09T10:06', tipeBayar: 'pelunasan' },
 
-  { id: 'PAY-JN1', bookingId: 'BR-001', bookingCode: 'BR-001', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 2400000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-06-15T10:05', tipeBayar: 'dp' },
-  { id: 'PAY-JN2', bookingId: 'BR-002', bookingCode: 'BR-002', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 1500000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-06-15T11:05', tipeBayar: 'dp' },
-  { id: 'PAY-JN3', bookingId: 'BR-115', bookingCode: 'BR-115', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 1000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-06-15T12:05', tipeBayar: 'dp' },
-  { id: 'PAY-JN4', bookingId: 'BR-106', bookingCode: 'BR-106', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 3000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-06-14T10:05', tipeBayar: 'pelunasan' },
-  { id: 'PAY-JN5', bookingId: 'BR-107', bookingCode: 'BR-107', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 4000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-06-15T10:05', tipeBayar: 'pelunasan' },
-  { id: 'PAY-JN6', bookingId: 'BR-116', bookingCode: 'BR-116', userId: 'walk-in-1', userNama: 'Agus Walkin', jumlah: 2000000, metode: 'Cash', status: 'berhasil', tanggalBayar: '2026-06-16T10:00', tipeBayar: 'pelunasan' },
-  { id: 'PAY-JN7', bookingId: 'BR-117', bookingCode: 'BR-117', userId: 'walk-in-2', userNama: 'Siti Walkin', jumlah: 2500000, metode: 'Cash', status: 'berhasil', tanggalBayar: '2026-06-16T14:55', tipeBayar: 'pelunasan' },
-  { id: 'PAY-JN8', bookingId: 'BR-007', bookingCode: 'BR-007', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 2000000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-06-09T10:05', tipeBayar: 'pelunasan' },
-  { id: 'PAY-JN9', bookingId: 'BR-009', bookingCode: 'BR-009', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 2800000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-06-04T10:05', tipeBayar: 'pelunasan' }, 
-  { id: 'PAY-F-007', bookingId: 'BR-007', bookingCode: 'BR-007', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 200000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-06-13T10:05', tipeBayar: 'denda' },
-  { id: 'PAY-F-009', bookingId: 'BR-009', bookingCode: 'BR-009', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 600000, metode: 'Transfer', status: 'berhasil', tanggalBayar: '2026-06-11T10:05', tipeBayar: 'denda' }
+  { id: 'PAY-JN1', bookingId: 'BR-001', bookingCode: 'BR-001', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 2400000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-06-15T10:05', tipeBayar: 'dp' },
+  { id: 'PAY-JN2', bookingId: 'BR-002', bookingCode: 'BR-002', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 1500000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-06-15T11:05', tipeBayar: 'dp' },
+  { id: 'PAY-JN3', bookingId: 'BR-115', bookingCode: 'BR-115', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 1000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-06-15T12:05', tipeBayar: 'dp' },
+  { id: 'PAY-JN4', bookingId: 'BR-106', bookingCode: 'BR-106', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 3000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-06-14T10:05', tipeBayar: 'pelunasan' },
+  { id: 'PAY-JN5', bookingId: 'BR-107', bookingCode: 'BR-107', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 4000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-06-15T10:05', tipeBayar: 'pelunasan' },
+  { id: 'PAY-JN6', bookingId: 'BR-116', bookingCode: 'BR-116', userId: 'walk-in-1', userNama: 'Agus Walkin', jumlah: 2000000, metode: 'Cash', status: 'disetujui', tanggalBayar: '2026-06-16T10:00', tipeBayar: 'pelunasan' },
+  { id: 'PAY-JN7', bookingId: 'BR-117', bookingCode: 'BR-117', userId: 'walk-in-2', userNama: 'Siti Walkin', jumlah: 2500000, metode: 'Cash', status: 'disetujui', tanggalBayar: '2026-06-16T14:55', tipeBayar: 'pelunasan' },
+  { id: 'PAY-JN8', bookingId: 'BR-007', bookingCode: 'BR-007', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 2000000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-06-09T10:05', tipeBayar: 'pelunasan' },
+  { id: 'PAY-JN9', bookingId: 'BR-009', bookingCode: 'BR-009', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 2800000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-06-04T10:05', tipeBayar: 'pelunasan' }, 
+  { id: 'PAY-F-007', bookingId: 'BR-007', bookingCode: 'BR-007', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 200000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-06-13T10:05', tipeBayar: 'denda' },
+  { id: 'PAY-F-009', bookingId: 'BR-009', bookingCode: 'BR-009', userId: 'USR-CUST-1', userNama: 'Budi Santoso', jumlah: 600000, metode: 'Transfer', status: 'disetujui', tanggalBayar: '2026-06-11T10:05', tipeBayar: 'denda' }
 ]`;
 
 const invoices = `[
-  { id: 'INV-001', bookingId: 'BR-001', subtotal: 7600000, denda: 0, total: 7600000, terbayar: 2400000, status: 'dp' },
-  { id: 'INV-002', bookingId: 'BR-002', subtotal: 4500000, denda: 0, total: 4500000, terbayar: 1500000, status: 'dp' },
+  { id: 'INV-001', bookingId: 'BR-001', subtotal: 7600000, denda: 0, total: 7600000, terbayar: 2400000, status: 'dp_lunas' },
+  { id: 'INV-002', bookingId: 'BR-002', subtotal: 4500000, denda: 0, total: 4500000, terbayar: 1500000, status: 'dp_lunas' },
   { id: 'INV-003', bookingId: 'BR-003', subtotal: 6000000, denda: 0, total: 6000000, terbayar: 6000000, status: 'lunas' },
   { id: 'INV-007', bookingId: 'BR-007', subtotal: 2000000, denda: 200000, total: 2200000, terbayar: 2200000, status: 'lunas' },
   { id: 'INV-008', bookingId: 'BR-008', subtotal: 2500000, denda: 400000, total: 2900000, terbayar: 0, status: 'pending' },
@@ -79,7 +79,7 @@ const invoices = `[
   { id: 'INV-110', bookingId: 'BR-110', subtotal: 3500000, denda: 0, total: 3500000, terbayar: 0, status: 'pending' },
   { id: 'INV-111', bookingId: 'BR-111', subtotal: 4500000, denda: 0, total: 4500000, terbayar: 0, status: 'pending' },
   { id: 'INV-112', bookingId: 'BR-112', subtotal: 5000000, denda: 0, total: 5000000, terbayar: 0, status: 'pending' },
-  { id: 'INV-115', bookingId: 'BR-115', subtotal: 3000000, denda: 0, total: 3000000, terbayar: 1000000, status: 'dp' },
+  { id: 'INV-115', bookingId: 'BR-115', subtotal: 3000000, denda: 0, total: 3000000, terbayar: 1000000, status: 'dp_lunas' },
   { id: 'INV-116', bookingId: 'BR-116', subtotal: 2000000, denda: 0, total: 2000000, terbayar: 2000000, status: 'lunas' },
   { id: 'INV-117', bookingId: 'BR-117', subtotal: 2500000, denda: 0, total: 2500000, terbayar: 2500000, status: 'lunas' }
 ]`;

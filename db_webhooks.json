@@ -1,0 +1,11 @@
+[
+  {
+    "id": "wh_test_1781684716095_e2ofc",
+    "orderId": "E2E-TEST-2026",
+    "transactionStatus": "settlement",
+    "grossAmount": 500000,
+    "paymentType": "bank_transfer",
+    "transactionTime": "2026-06-17 08:25",
+    "timestamp": 1781684716113
+  }
+]

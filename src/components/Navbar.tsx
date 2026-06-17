@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Car, Bell, Layers, User, Shield, UserCheck, RefreshCw, Key, LogIn, UserPlus, Lock, ChevronDown, Mail, Phone, Check, X, Menu, ShoppingCart, Calendar, Users, TrendingUp, ClipboardList, Home, CreditCard } from 'lucide-react';
+import { Car, Bell, Layers, User, Shield, UserCheck, RefreshCw, Key, LogIn, LogOut, UserPlus, Lock, ChevronDown, Mail, Phone, Check, X, Menu, ShoppingCart, Calendar, Users, TrendingUp, ClipboardList, Home, CreditCard } from 'lucide-react';
 import { User as UserType, AppNotification, Booking, Pembayaran, Mobil, Driver, CartItem } from '../types';
 
 interface NavbarProps {
@@ -22,6 +22,8 @@ interface NavbarProps {
   cart?: CartItem[];
   customerActiveSubTab?: string;
   setCustomerActiveSubTab?: (subTab: string) => void;
+  setLoginMode?: (mode: 'login' | 'register') => void;
+  onLogout?: () => void;
 }
 
 export default function Navbar({
@@ -43,7 +45,9 @@ export default function Navbar({
   allDrivers = [],
   cart = [],
   customerActiveSubTab = 'my-bookings',
-  setCustomerActiveSubTab
+  setCustomerActiveSubTab,
+  setLoginMode,
+  onLogout
 }: NavbarProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
@@ -130,35 +134,38 @@ export default function Navbar({
           {!isDashboard && (
             <div className="hidden md:flex items-center gap-6">
               <button
-                onClick={() => {
-                  setActiveTab('landing');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className={`text-xs font-black uppercase tracking-wider transition-colors ${activeTab === 'landing' ? 'text-blue-600 font-black' : 'text-slate-600 hover:text-blue-600'}`}
+                onClick={() => navigateToSection('hero-section')}
+                className="text-xs font-black uppercase tracking-wider text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
               >
                 Beranda
               </button>
               <button
+                onClick={() => navigateToSection('mobil-populer')}
+                className="text-xs font-black uppercase tracking-wider text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
+              >
+                Mobil Populer
+              </button>
+              <button
+                onClick={() => navigateToSection('katalog-mobil')}
+                className="text-xs font-black uppercase tracking-wider text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
+              >
+                Katalog Mobil
+              </button>
+              <button
+                onClick={() => navigateToSection('driver-section')}
+                className="text-xs font-black uppercase tracking-wider text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
+              >
+                Driver Profesional
+              </button>
+              <button
                 onClick={() => navigateToSection('about-us-section')}
-                className="text-xs font-black uppercase tracking-wider text-slate-605 hover:text-blue-600 transition-colors cursor-pointer"
+                className="text-xs font-black uppercase tracking-wider text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
               >
                 Tentang Kami
               </button>
               <button
-                onClick={() => navigateToSection('services-section')}
-                className="text-xs font-black uppercase tracking-wider text-slate-605 hover:text-blue-600 transition-colors cursor-pointer"
-              >
-                Layanan
-              </button>
-              <button
-                onClick={() => navigateToSection('how-it-works-section')}
-                className="text-xs font-black uppercase tracking-wider text-slate-605 hover:text-blue-600 transition-colors cursor-pointer"
-              >
-                Cara Kerja
-              </button>
-              <button
                 onClick={() => navigateToSection('contact-section')}
-                className="text-xs font-black uppercase tracking-wider text-slate-605 hover:text-blue-600 transition-colors cursor-pointer"
+                className="text-xs font-black uppercase tracking-wider text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
               >
                 Kontak
               </button>
@@ -167,7 +174,7 @@ export default function Navbar({
 
           {/* Right Action buttons */}
           <div className="flex items-center gap-2 md:gap-3">
-            {isDashboard ? (
+            {currentUser && currentUser.id !== 'guest' ? (
               <>
                 {/* Unified Login Action with dropdown option displaying active user name */}
                 <div className="relative">
@@ -216,7 +223,7 @@ export default function Navbar({
                         {/* Choice 1: Ganti / Masuk Akun */}
                         <button
                           onClick={() => handleLoginAction('login')}
-                          className="w-full text-left font-bold text-xs p-2.5 rounded-xl border border-slate-100 hover:bg-slate-55 text-slate-800 transition-all flex items-start gap-2.5 cursor-pointer"
+                          className="w-full text-left font-bold text-xs p-2.5 rounded-xl border border-slate-100 hover:bg-slate-50 text-slate-800 transition-all flex items-start gap-2.5 cursor-pointer"
                         >
                           <LogIn className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
                           <div>
@@ -236,6 +243,23 @@ export default function Navbar({
                             <span className="text-[10px] text-slate-500 font-medium block mt-0.5">Daftarkan akun baru gratis untuk menyewa armada</span>
                           </div>
                         </button>
+
+                        {/* Choice 3: Logout */}
+                        {onLogout && (
+                          <button
+                            onClick={() => {
+                              setShowLoginDropdown(false);
+                              onLogout();
+                            }}
+                            className="w-full text-left font-bold text-xs p-2.5 rounded-xl border border-red-100 bg-red-50/20 hover:bg-red-50 text-red-800 transition-all flex items-start gap-2.5 cursor-pointer"
+                          >
+                            <LogOut className="w-4 h-4 text-red-650 mt-0.5 shrink-0" />
+                            <div>
+                              <span className="block font-black text-xs text-red-950 leading-tight">Logout / Keluar</span>
+                              <span className="text-[10px] text-slate-500 font-medium block mt-0.5">Akhiri sesi aktif Anda dengan aman</span>
+                            </div>
+                          </button>
+                        )}
                       </div>
 
                       <div className="mt-3 pt-2 text-[9px] text-slate-400 text-center border-t border-slate-50 leading-relaxed font-sans">
@@ -253,10 +277,10 @@ export default function Navbar({
                       setActiveTab('dashboard-customer');
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className={`p-2 rounded-xl relative transition-all active:scale-95 cursor-pointer text-slate-400 hover:bg-slate-55 hover:text-slate-700`}
+                    className={`p-2 rounded-xl relative transition-all active:scale-95 cursor-pointer text-slate-400 hover:bg-slate-50 hover:text-slate-700`}
                     id="navbar-cart-button"
                   >
-                    <ShoppingCart className="w-5 h-5 text-slate-650" />
+                    <ShoppingCart className="w-5 h-5 text-slate-600" />
                     {cart.filter(item => item.userId === currentUser.id && item.status !== 'checkout' && item.status !== 'dibatalkan').length > 0 && (
                       <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-blue-600 text-white font-extrabold text-[8px] flex items-center justify-center ring-2 ring-white">
                         {cart.filter(item => item.userId === currentUser.id && item.status !== 'checkout' && item.status !== 'dibatalkan').length}
@@ -269,7 +293,6 @@ export default function Navbar({
                 <div className="relative">
                   <button
                     onClick={() => {
-
                       setShowNotifications(!showNotifications);
                       setShowRoleSwitcher(false);
                     }}
@@ -305,7 +328,6 @@ export default function Navbar({
                             .map((notif, i) => {
                               // Dinamis icon & bg berdasarkan kata kunci di title/message
                               const t = notif.title.toLowerCase();
-                              const m = notif.message.toLowerCase();
                               let iconEl = <Bell className="w-3.5 h-3.5 text-slate-600" />;
                               let bgClass = 'bg-slate-50 border-slate-100';
                               
@@ -347,7 +369,7 @@ export default function Navbar({
                                       <span className="text-[11px] font-black text-slate-800 truncate leading-tight">{notif.title}</span>
                                       <span className="text-[9px] text-slate-400 font-mono shrink-0">{notif.timestamp.split(' ')[1]} WIB</span>
                                     </div>
-                                    <p className="text-[11px] text-red-600 mt-1 leading-normal font-medium">{notif.message}</p>
+                                    <p className="text-[11px] text-slate-600 mt-1 leading-normal font-medium">{notif.message}</p>
                                   </div>
                                   {!notif.read && (
                                     <span className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-blue-600"></span>
@@ -363,18 +385,31 @@ export default function Navbar({
                     </div>
                   )}
                 </div>
-
-</>
+              </>
             ) : (
-              // Public Navbar Actions: Only Login button
-              <button
-                onClick={() => setActiveTab('login')}
-                className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-blue-500/10 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
-                id="unified-login-btn"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Login</span>
-              </button>
+              // Public Navbar Actions: Login and Register buttons for Guest
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (setLoginMode) setLoginMode('login');
+                    setActiveTab('login');
+                  }}
+                  className="text-xs text-slate-700 hover:text-blue-600 hover:bg-slate-50 font-bold px-4 py-2.5 rounded-xl border border-slate-200 transition-all cursor-pointer bg-white"
+                  id="navbar-login-btn"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => {
+                    if (setLoginMode) setLoginMode('register');
+                    setActiveTab('login');
+                  }}
+                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-blue-500/10 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                  id="navbar-register-btn"
+                >
+                  Daftar
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -644,7 +679,7 @@ export default function Navbar({
                 <>
                   <button
                     onClick={() => {
-                      navigateToSection('welcome-landing-body');
+                      navigateToSection('hero-section');
                       setShowMobileDrawer(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left cursor-pointer text-xs ${
@@ -653,6 +688,39 @@ export default function Navbar({
                   >
                     <Layers className="w-4 h-4 opacity-80" />
                     <span>Beranda</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      navigateToSection('mobil-populer');
+                      setShowMobileDrawer(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left cursor-pointer text-xs text-slate-300 hover:bg-[#121f3c]"
+                  >
+                    <Car className="w-4 h-4 opacity-80" />
+                    <span>Mobil Populer</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      navigateToSection('katalog-mobil');
+                      setShowMobileDrawer(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left cursor-pointer text-xs text-slate-300 hover:bg-[#121f3c]"
+                  >
+                    <ClipboardList className="w-4 h-4 opacity-80" />
+                    <span>Katalog Mobil</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      navigateToSection('driver-section');
+                      setShowMobileDrawer(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left cursor-pointer text-xs text-slate-300 hover:bg-[#121f3c]"
+                  >
+                    <Users className="w-4 h-4 opacity-80" />
+                    <span>Driver Profesional</span>
                   </button>
 
                   <button
@@ -668,28 +736,6 @@ export default function Navbar({
 
                   <button
                     onClick={() => {
-                      navigateToSection('services-section');
-                      setShowMobileDrawer(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left cursor-pointer text-xs text-slate-300 hover:bg-[#121f3c]"
-                  >
-                    <Car className="w-4 h-4 opacity-80" />
-                    <span>Layanan</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      navigateToSection('how-it-works-section');
-                      setShowMobileDrawer(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left cursor-pointer text-xs text-slate-300 hover:bg-[#121f3c]"
-                  >
-                    <Calendar className="w-4 h-4 opacity-80" />
-                    <span>Cara Kerja</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
                       navigateToSection('contact-section');
                       setShowMobileDrawer(false);
                     }}
@@ -699,16 +745,30 @@ export default function Navbar({
                     <span>Kontak</span>
                   </button>
 
-                  <button
-                    onClick={() => {
-                      setActiveTab('login');
-                      setShowMobileDrawer(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-left cursor-pointer text-xs text-white bg-blue-600 hover:bg-blue-700 font-bold"
-                  >
-                    <LogIn className="w-4 h-4 opacity-85" />
-                    <span>Login</span>
-                  </button>
+                  <div className="flex flex-col gap-2 pt-4 border-t border-[#18284e]/60 mt-4">
+                    <button
+                      onClick={() => {
+                        if (setLoginMode) setLoginMode('login');
+                        setActiveTab('login');
+                        setShowMobileDrawer(false);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition-all text-xs text-slate-200 border border-[#1d305e] hover:bg-[#121f3c] font-bold cursor-pointer"
+                    >
+                      <LogIn className="w-4 h-4 opacity-85" />
+                      <span>Masuk (Login)</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (setLoginMode) setLoginMode('register');
+                        setActiveTab('login');
+                        setShowMobileDrawer(false);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl transition-all text-xs text-white bg-blue-600 hover:bg-blue-700 font-bold cursor-pointer"
+                    >
+                      <UserPlus className="w-4 h-4 opacity-85" />
+                      <span>Daftar Akun Baru</span>
+                    </button>
+                  </div>
                 </>
               )}
             </nav>
